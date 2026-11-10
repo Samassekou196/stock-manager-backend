@@ -1,0 +1,779 @@
+databaseChangeLog:
+  - property: { name: id_type, value: INTEGER, dbms: sqlite }
+  - property: { name: id_type, value: BIGINT, dbms: all }
+
+  - changeSet:
+      id: 001-create-categories-if-missing
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: categories
+      changes:
+        - createTable:
+            tableName: categories
+            columns:
+              - column:
+                  name: id
+                  type: "${id_type}"
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+
+  - changeSet:
+      id: 002-create-suppliers-if-missing
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: suppliers
+      changes:
+        - createTable:
+            tableName: suppliers
+            columns:
+              - column:
+                  name: id
+                  type: "${id_type}"
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column: { name: address, type: VARCHAR(255) }
+              - column: { name: phone, type: VARCHAR(100) }
+              - column: { name: email, type: VARCHAR(255) }
+              - column: { name: city, type: VARCHAR(255) }
+              - column: { name: country, type: VARCHAR(255) }
+
+  - changeSet:
+      id: 003-create-customers-if-missing
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: customers
+      changes:
+        - createTable:
+            tableName: customers
+            columns:
+              - column:
+                  name: id
+                  type: "${id_type}"
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: last_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column: { name: phone, type: VARCHAR(100) }
+              - column: { name: email, type: VARCHAR(255) }
+              - column: { name: address, type: VARCHAR(255) }
+
+  - changeSet:
+      id: 004-create-products-if-missing
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: products
+      changes:
+        - createTable:
+            tableName: products
+            columns:
+              - column:
+                  name: id
+                  type: "${id_type}"
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column: { name: description, type: VARCHAR(2000) }
+              - column:
+                  name: price
+                  type: "DECIMAL(19,2)"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity
+                  type: DOUBLE
+                  constraints:
+                    nullable: false
+              - column: { name: alert_threshold, type: DOUBLE, defaultValueNumeric: 5 }
+              - column: { name: wholesale_price, type: "DECIMAL(19,2)" }
+              - column: { name: wholesale_quantity, type: DOUBLE }
+              - column: { name: wholesale_unit, type: VARCHAR(100) }
+              - column: { name: unit_type, type: VARCHAR(100) }
+              - column: { name: unit_label, type: VARCHAR(100) }
+              - column: { name: is_fractional, type: BOOLEAN, defaultValueBoolean: false }
+              - column: { name: base_unit_price, type: "DECIMAL(19,2)" }
+              - column: { name: min_quantity, type: DOUBLE }
+              - column: { name: quick_sale_amounts, type: VARCHAR(1000) }
+              - column:
+                  name: category_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_products_category
+                    references: categories(id)
+              - column:
+                  name: supplier_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_products_supplier
+                    references: suppliers(id)
+              - column: { name: created_at, type: TIMESTAMP }
+
+  - changeSet:
+      id: 005-create-sales-if-missing
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: sales
+      changes:
+        - createTable:
+            tableName: sales
+            columns:
+              - column:
+                  name: id
+                  type: "${id_type}"
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: invoice_number
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: customer_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_sales_customer
+                    references: customers(id)
+              - column:
+                  name: total_amount
+                  type: "DECIMAL(19,2)"
+                  constraints:
+                    nullable: false
+              - column: { name: sale_date, type: TIMESTAMP }
+
+  - changeSet:
+      id: 006-create-sale-items-if-missing
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: sale_items
+      changes:
+        - createTable:
+            tableName: sale_items
+            columns:
+              - column:
+                  name: id
+                  type: "${id_type}"
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: sale_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_sale_items_sale
+                    references: sales(id)
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_sale_items_product
+                    references: products(id)
+              - column:
+                  name: quantity
+                  type: DOUBLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: unit_price
+                  type: "DECIMAL(19,2)"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sub_total
+                  type: "DECIMAL(19,2)"
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 007-create-app-users-if-missing
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: app_users
+      changes:
+        - createTable:
+            tableName: app_users
+            columns:
+              - column:
+                  name: id
+                  type: "${id_type}"
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(80)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password_hash
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 008-add-country-to-existing-suppliers
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - tableExists:
+              tableName: suppliers
+          - not:
+              columnExists:
+                tableName: suppliers
+                columnName: country
+      changes:
+        - addColumn:
+            tableName: suppliers
+            columns:
+              - column: { name: country, type: VARCHAR(255) }
+
+  - changeSet:
+      id: 009-preserve-legacy-supplier-country-values
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - tableExists:
+              tableName: suppliers
+          - columnExists:
+              tableName: suppliers
+              columnName: country
+          - columnExists:
+              tableName: suppliers
+              columnName: pays
+      changes:
+        - sql:
+            sql: UPDATE suppliers SET country = pays WHERE pays IS NOT NULL AND (country IS NULL OR country = '')
+
+  - changeSet:
+      id: 010-add-product-identifiers-and-cost
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - tableExists:
+              tableName: products
+          - not:
+              columnExists:
+                tableName: products
+                columnName: barcode
+      changes:
+        - sql:
+            sql: ALTER TABLE products ADD COLUMN barcode VARCHAR(64)
+        - sql:
+            sql: ALTER TABLE products ADD COLUMN sku VARCHAR(64)
+        - sql:
+            sql: ALTER TABLE products ADD COLUMN brand VARCHAR(120)
+        - sql:
+            sql: ALTER TABLE products ADD COLUMN purchase_price DECIMAL(19,2)
+        - sql:
+            sql: ALTER TABLE products ADD COLUMN image_url VARCHAR(500)
+        - sql:
+            sql: ALTER TABLE products ADD COLUMN track_expiry BOOLEAN DEFAULT FALSE
+        - sql:
+            sql: ALTER TABLE products ADD COLUMN version BIGINT DEFAULT 0
+
+  - changeSet:
+      id: 011-product-barcode-unique-index
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - tableExists:
+              tableName: products
+          - columnExists:
+              tableName: products
+              columnName: barcode
+          - not:
+              indexExists:
+                tableName: products
+                indexName: ux_products_barcode
+      changes:
+        - createIndex:
+            tableName: products
+            indexName: ux_products_barcode
+            unique: true
+            columns:
+              - column: { name: barcode }
+
+  - changeSet:
+      id: 012-product-sku-unique-index
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - tableExists:
+              tableName: products
+          - columnExists:
+              tableName: products
+              columnName: sku
+          - not:
+              indexExists:
+                tableName: products
+                indexName: ux_products_sku
+      changes:
+        - createIndex:
+            tableName: products
+            indexName: ux_products_sku
+            unique: true
+            columns:
+              - column: { name: sku }
+
+  - changeSet:
+      id: 013-add-sale-payment-details
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - tableExists:
+              tableName: sales
+          - not:
+              columnExists:
+                tableName: sales
+                columnName: payment_method
+      changes:
+        - sql:
+            sql: ALTER TABLE sales ADD COLUMN payment_method VARCHAR(30) DEFAULT 'CASH'
+        - sql:
+            sql: ALTER TABLE sales ADD COLUMN amount_received DECIMAL(19,2) DEFAULT 0
+        - sql:
+            sql: ALTER TABLE sales ADD COLUMN change_amount DECIMAL(19,2) DEFAULT 0
+        - sql:
+            sql: ALTER TABLE sales ADD COLUMN cashier_username VARCHAR(80)
+
+  - changeSet:
+      id: 014-add-sale-item-units
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - tableExists:
+              tableName: sale_items
+          - not:
+              columnExists:
+                tableName: sale_items
+                columnName: stock_quantity
+      changes:
+        - sql:
+            sql: ALTER TABLE sale_items ADD COLUMN stock_quantity DOUBLE PRECISION DEFAULT 0
+        - sql:
+            sql: ALTER TABLE sale_items ADD COLUMN unit_label VARCHAR(100) DEFAULT 'Unité'
+        - sql:
+            sql: UPDATE sale_items SET stock_quantity = quantity WHERE stock_quantity = 0
+
+  - changeSet:
+      id: 015-create-stock-movements
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: stock_movements
+      changes:
+        - createTable:
+            tableName: stock_movements
+            columns:
+              - column:
+                  name: id
+                  type: "${id_type}"
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_stock_movements_product
+                    references: products(id)
+              - column:
+                  name: movement_type
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+              - column: { name: quantity_change, type: DOUBLE }
+              - column: { name: quantity_before, type: DOUBLE }
+              - column: { name: quantity_after, type: DOUBLE }
+              - column:
+                  name: reason
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column: { name: reference_code, type: VARCHAR(120) }
+              - column: { name: actor_username, type: VARCHAR(80) }
+              - column: { name: created_at, type: TIMESTAMP }
+
+  - changeSet:
+      id: 016-create-product-batches
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: product_batches
+      changes:
+        - createTable:
+            tableName: product_batches
+            columns:
+              - column:
+                  name: id
+                  type: "${id_type}"
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_product_batches_product
+                    references: products(id)
+              - column: { name: batch_code, type: VARCHAR(80) }
+              - column: { name: expiry_date, type: DATE }
+              - column: { name: quantity_received, type: DOUBLE }
+              - column: { name: quantity_remaining, type: DOUBLE }
+              - column: { name: unit_cost, type: "DECIMAL(19,2)" }
+              - column: { name: created_at, type: TIMESTAMP }
+              - column: { name: version, type: BIGINT, defaultValueNumeric: 0 }
+
+  - changeSet:
+      id: 017-seed-opening-stock-movements
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - tableExists:
+              tableName: products
+          - tableExists:
+              tableName: stock_movements
+      changes:
+        - sql:
+            sql: "INSERT INTO stock_movements (product_id, movement_type, quantity_change, quantity_before, quantity_after, reason, reference_code, actor_username, created_at) SELECT p.id, 'OPENING', p.quantity, 0, p.quantity, 'Solde initial existant', 'MIGRATION-BASE', 'system', CURRENT_TIMESTAMP FROM products p WHERE p.quantity > 0 AND NOT EXISTS (SELECT 1 FROM stock_movements m WHERE m.product_id = p.id AND m.movement_type = 'OPENING' AND m.reference_code = 'MIGRATION-BASE')"
+
+  - changeSet:
+      id: 018-seed-legacy-product-batches
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - tableExists:
+              tableName: products
+          - tableExists:
+              tableName: product_batches
+      changes:
+        - sql:
+            sql: "INSERT INTO product_batches (product_id, batch_code, expiry_date, quantity_received, quantity_remaining, unit_cost, created_at, version) SELECT p.id, 'LEGACY-' || p.id, NULL, p.quantity, p.quantity, NULL, CURRENT_TIMESTAMP, 0 FROM products p WHERE p.quantity > 0 AND NOT EXISTS (SELECT 1 FROM product_batches b WHERE b.product_id = p.id AND b.batch_code = 'LEGACY-' || p.id)"
+
+  - changeSet:
+      id: 019-create-purchase-orders
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: purchase_orders
+      changes:
+        - createTable:
+            tableName: purchase_orders
+            columns:
+              - column: { name: id, type: "${id_type}", autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: order_number, type: VARCHAR(100), constraints: { nullable: false, unique: true } }
+              - column: { name: supplier_id, type: BIGINT, constraints: { nullable: false, foreignKeyName: fk_purchase_orders_supplier, references: suppliers(id) } }
+              - column: { name: status, type: VARCHAR(30), constraints: { nullable: false } }
+              - column: { name: ordered_at, type: TIMESTAMP }
+              - column: { name: expected_at, type: DATE }
+              - column: { name: created_by, type: VARCHAR(80) }
+              - column: { name: total_amount, type: "DECIMAL(19,2)" }
+              - column: { name: notes, type: VARCHAR(2000) }
+              - column: { name: version, type: BIGINT, defaultValueNumeric: 0 }
+
+  - changeSet:
+      id: 020-create-purchase-order-items
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: purchase_order_items
+      changes:
+        - createTable:
+            tableName: purchase_order_items
+            columns:
+              - column: { name: id, type: "${id_type}", autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: purchase_order_id, type: BIGINT, constraints: { nullable: false, foreignKeyName: fk_purchase_order_items_order, references: purchase_orders(id) } }
+              - column: { name: product_id, type: BIGINT, constraints: { nullable: false, foreignKeyName: fk_purchase_order_items_product, references: products(id) } }
+              - column: { name: quantity_ordered, type: DOUBLE, constraints: { nullable: false } }
+              - column: { name: quantity_received, type: DOUBLE, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: unit_cost, type: "DECIMAL(19,2)", constraints: { nullable: false } }
+
+  - changeSet:
+      id: 021-create-sale-returns
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: sale_returns
+      changes:
+        - createTable:
+            tableName: sale_returns
+            columns:
+              - column: { name: id, type: "${id_type}", autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: return_number, type: VARCHAR(100), constraints: { nullable: false, unique: true } }
+              - column: { name: sale_id, type: BIGINT, constraints: { nullable: false, foreignKeyName: fk_sale_returns_sale, references: sales(id) } }
+              - column: { name: reason, type: VARCHAR(500), constraints: { nullable: false } }
+              - column: { name: refund_amount, type: "DECIMAL(19,2)", constraints: { nullable: false } }
+              - column: { name: status, type: VARCHAR(30), constraints: { nullable: false } }
+              - column: { name: created_by, type: VARCHAR(80) }
+              - column: { name: created_at, type: TIMESTAMP }
+
+  - changeSet:
+      id: 022-create-sale-return-items
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: sale_return_items
+      changes:
+        - createTable:
+            tableName: sale_return_items
+            columns:
+              - column: { name: id, type: "${id_type}", autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: sale_return_id, type: BIGINT, constraints: { nullable: false, foreignKeyName: fk_sale_return_items_return, references: sale_returns(id) } }
+              - column: { name: sale_item_id, type: BIGINT, constraints: { nullable: false, foreignKeyName: fk_sale_return_items_sale_item, references: sale_items(id) } }
+              - column: { name: quantity, type: DOUBLE, constraints: { nullable: false } }
+              - column: { name: restock, type: BOOLEAN, defaultValueBoolean: true, constraints: { nullable: false } }
+              - column: { name: refund_amount, type: "DECIMAL(19,2)", constraints: { nullable: false } }
+
+  - changeSet:
+      id: 023-create-cash-register-sessions
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: cash_register_sessions
+      changes:
+        - createTable:
+            tableName: cash_register_sessions
+            columns:
+              - column: { name: id, type: "${id_type}", autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: register_name, type: VARCHAR(100), constraints: { nullable: false } }
+              - column: { name: opened_by, type: VARCHAR(80), constraints: { nullable: false } }
+              - column: { name: opening_float, type: "DECIMAL(19,2)", constraints: { nullable: false } }
+              - column: { name: expected_cash, type: "DECIMAL(19,2)", defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: counted_cash, type: "DECIMAL(19,2)" }
+              - column: { name: variance, type: "DECIMAL(19,2)" }
+              - column: { name: status, type: VARCHAR(20), constraints: { nullable: false } }
+              - column: { name: opened_at, type: TIMESTAMP }
+              - column: { name: closed_at, type: TIMESTAMP }
+
+  - changeSet:
+      id: 024-create-expense-categories
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: expense_categories
+      changes:
+        - createTable:
+            tableName: expense_categories
+            columns:
+              - column: { name: id, type: "${id_type}", autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: name, type: VARCHAR(120), constraints: { nullable: false, unique: true } }
+              - column: { name: active, type: BOOLEAN, defaultValueBoolean: true, constraints: { nullable: false } }
+
+  - changeSet:
+      id: 025-create-expenses
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: expenses
+      changes:
+        - createTable:
+            tableName: expenses
+            columns:
+              - column: { name: id, type: "${id_type}", autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: category_id, type: BIGINT, constraints: { nullable: false, foreignKeyName: fk_expenses_category, references: expense_categories(id) } }
+              - column: { name: amount, type: "DECIMAL(19,2)", constraints: { nullable: false } }
+              - column: { name: description, type: VARCHAR(1000), constraints: { nullable: false } }
+              - column: { name: payment_method, type: VARCHAR(30), constraints: { nullable: false } }
+              - column: { name: paid_by, type: VARCHAR(80) }
+              - column: { name: created_at, type: TIMESTAMP }
+
+  - changeSet:
+      id: 026-create-inventory-counts
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: inventory_counts
+      changes:
+        - createTable:
+            tableName: inventory_counts
+            columns:
+              - column: { name: id, type: "${id_type}", autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: reference, type: VARCHAR(100), constraints: { nullable: false, unique: true } }
+              - column: { name: status, type: VARCHAR(20), constraints: { nullable: false } }
+              - column: { name: started_by, type: VARCHAR(80) }
+              - column: { name: completed_by, type: VARCHAR(80) }
+              - column: { name: started_at, type: TIMESTAMP }
+              - column: { name: completed_at, type: TIMESTAMP }
+
+  - changeSet:
+      id: 027-create-inventory-count-items
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: inventory_count_items
+      changes:
+        - createTable:
+            tableName: inventory_count_items
+            columns:
+              - column: { name: id, type: "${id_type}", autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: inventory_count_id, type: BIGINT, constraints: { nullable: false, foreignKeyName: fk_inventory_count_items_count, references: inventory_counts(id) } }
+              - column: { name: product_id, type: BIGINT, constraints: { nullable: false, foreignKeyName: fk_inventory_count_items_product, references: products(id) } }
+              - column: { name: expected_quantity, type: DOUBLE, constraints: { nullable: false } }
+              - column: { name: counted_quantity, type: DOUBLE }
+              - column: { name: reason, type: VARCHAR(500) }
+
+  - changeSet:
+      id: 028-create-audit-log
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: audit_logs
+      changes:
+        - createTable:
+            tableName: audit_logs
+            columns:
+              - column: { name: id, type: "${id_type}", autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: actor_username, type: VARCHAR(80) }
+              - column: { name: action, type: VARCHAR(80), constraints: { nullable: false } }
+              - column: { name: entity_type, type: VARCHAR(80), constraints: { nullable: false } }
+              - column: { name: entity_id, type: VARCHAR(100) }
+              - column: { name: summary, type: VARCHAR(1000) }
+              - column: { name: created_at, type: TIMESTAMP }
+
+  - changeSet:
+      id: 029-add-loyalty-points-to-customers
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - tableExists:
+              tableName: customers
+          - not:
+              columnExists:
+                tableName: customers
+                columnName: loyalty_points
+      changes:
+        - sql:
+            sql: ALTER TABLE customers ADD COLUMN loyalty_points BIGINT DEFAULT 0
+
+  - changeSet:
+      id: 030-add-loyalty-and-product-supporting-indexes
+      author: stock-manager
+      preConditions:
+        onFail: MARK_RAN
+        tableExists:
+          tableName: stock_movements
+      changes:
+        - createIndex:
+            tableName: stock_movements
+            indexName: ix_stock_movements_product_date
+            columns:
+              - column: { name: product_id }
+              - column: { name: created_at }
